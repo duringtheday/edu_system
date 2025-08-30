@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "export": "next export -o out",
+    "build:pages": "next build && next export -o out"
   },
   "dependencies": {
     "react": "^18",
