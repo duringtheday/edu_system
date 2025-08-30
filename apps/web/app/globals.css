@@ -1,0 +1,45 @@
+* { box-sizing: border-box; }
+a { color: inherit; }
+button { cursor: pointer; }
+
+
+:root{
+  --blue:#0B5FFF;
+  --text:#101828;
+  --bg:#F9FAFB;
+  --card:#FFFFFF;
+  --border:#D0D5DD;
+  --muted:#475467;
+  --ok:#16A34A;
+  --warn:#F97316;
+  --radius-card:16px;
+  --radius-btn:12px;
+  --shadow:0 10px 20px rgba(16,24,40,0.06);
+}
+
+/* base */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer}
+
+/* components */
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius-card);
+  box-shadow:var(--shadow);
+}
+.btn{border-radius:var(--radius-btn);padding:10px 16px;font-weight:600;border:1px solid transparent}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-secondary{background:#F2F4F7;color:var(--text);border-color:var(--border)}
+.input{
+  width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;outline:none
+}
+.input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(11,95,255,.15)}
+.badge{display:inline-block;padding:4px 10px;border-radius:999px;font-weight:600}
+
+/* animations */
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.animate-fade{animation:fade .18s ease both}
+.animate-slide{animation:slideUp .22s ease both}

@@ -1,0 +1,23 @@
+{
+  "name": "edu_system",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev:web": "turbo run dev --filter=@edu-os/web",
+    "dev:mobile": "turbo run start --filter=@edu-os/mobile",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.6",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "infra/*"
+  ]
+}
