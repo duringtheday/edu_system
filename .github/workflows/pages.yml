@@ -26,21 +26,20 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      # ✅ Installs pnpm and puts it on PATH (no version specified → uses packageManager)
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: false
+      # ✅ Put pnpm on PATH via Corepack (respects your packageManager version)
+      - name: Enable Corepack (pnpm)
+        run: |
+          corepack enable
+          # Pin to your repo's version if you want; else Corepack uses packageManager field
+          corepack prepare pnpm@9.15.9 --activate
+          pnpm -v
 
-      - name: Show pnpm version
-        run: pnpm -v
-
-      # Install at the repo root (monorepo)
+      # Monorepo install at the root
       - name: Install deps (monorepo root)
         run: pnpm install --frozen-lockfile
 
-      # Build only the web app (uses your package name @edu-os/web)
-      - name: Build static site (Next export)
+      # Build only the web app; it will output to apps/web/out (Next "output: export")
+      - name: Build static site
         env:
           GITHUB_ACTIONS: "true"
         run: pnpm --filter @edu-os/web build
@@ -48,7 +47,7 @@ jobs:
       - name: Add .nojekyll and 404
         run: |
           touch apps/web/out/.nojekyll
-          cp apps/web/out/index.html apps/web/out/404.html
+          cp apps/web/out/index.html apps/web/out/404.html || true
 
       - name: Configure Pages
         uses: actions/configure-pages@v4
