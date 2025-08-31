@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
@@ -25,20 +25,20 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+          cache-dependency-path: '**/pnpm-lock.yaml'
 
-      # Ensure pnpm is available (uses version from packageManager in package.json)
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          run_install: false
-      - run: pnpm -v
+      # ✅ Ensure pnpm exists using Corepack (no extra action, works on any runner)
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          # use the version from "packageManager" in package.json; fallback to v9
+          corepack prepare pnpm@latest --activate || true
+          pnpm -v
 
-      # Install at monorepo root
-      - name: Install dependencies
+      - name: Install deps (monorepo root)
         run: pnpm install --frozen-lockfile
 
-      # Build only the web package (Next "output: export" writes to apps/web/out)
-      - name: Build web (static export)
+      - name: Build web (Next output: export)
         env:
           GITHUB_ACTIONS: "true"
         run: pnpm --filter @edu-os/web build
@@ -57,11 +57,11 @@ jobs:
           path: apps/web/out
 
   deploy:
+    needs: build
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
