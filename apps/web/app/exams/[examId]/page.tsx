@@ -1,7 +1,6 @@
-export const dynamic = "force-static";
+﻿export const dynamic = "force-static";
 export const dynamicParams = false;
 
-// IMPORTANT: materializamos al menos una ruta para el export estático
 export function generateStaticParams() {
   return [{ examId: "demo" }];
 }

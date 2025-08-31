@@ -10,13 +10,9 @@ import { MAIN } from "../lib/nav";
 export default function EdgeDial({
   activeIndex,
   onNavigate,
-  edgeLeft: edgeLeftProp,
-  arrowShiftX: arrowShiftXProp,
 }: {
   activeIndex: number;
   onNavigate: (key: string) => void;
-  edgeLeft?: number;
-  arrowShiftX?: number;
 }) {
   // ======= CONFIG BÁSICA =======
   const DEFAULTS = {
@@ -32,10 +28,10 @@ export default function EdgeDial({
   } as const;
 
   // ======= FLECHAS (CAMBIA SOLO ESTAS 3 PARA TAMAÑO/GRUESO) =======
-  const ARROW_SIZE = 28;   // 18–32 recomendado
+  const ARROW_SIZE   = 28;   // 18–32 recomendado
   const ARROW_STROKE = 4.0;  // 2.5–5 recomendado
-  const ARROW_BTN_W = ARROW_SIZE + 18; // ancho del botón contenedor
-  const ARROW_BTN_H = ARROW_SIZE + 10; // alto del botón contenedor
+  const ARROW_BTN_W  = ARROW_SIZE + 18; // ancho del botón contenedor
+  const ARROW_BTN_H  = ARROW_SIZE + 10; // alto del botón contenedor
   // ================================================================
 
   // Persistencia local (solo este componente)
@@ -56,22 +52,22 @@ export default function EdgeDial({
     }
   };
   const save = (cfg: { edgeLeft: number; arrowShiftX: number }) => {
-    try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch { }
+    try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch {}
   };
 
-  const [edgeLeft, setEdgeLeft] = React.useState(() => (edgeLeftProp ?? load().edgeLeft));
-  const [arrowShiftX, setArrowShiftX] = React.useState(() =>(arrowShiftXProp ?? load().arrowShiftX));
+  const [edgeLeft, setEdgeLeft] = React.useState(() => load().edgeLeft);
+  const [arrowShiftX, setArrowShiftX] = React.useState(() => load().arrowShiftX);
 
   // Hotkeys
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey && e.altKey)) return;
       let changed = false;
-      if (e.key === "ArrowLeft") { setEdgeLeft(v => { const nv = Math.max(0, v - 2); save({ edgeLeft: nv, arrowShiftX }); return nv; }); changed = true; }
-      if (e.key === "ArrowRight") { setEdgeLeft(v => { const nv = v + 2; save({ edgeLeft: nv, arrowShiftX }); return nv; }); changed = true; }
-      if (e.key === "[") { setArrowShiftX(v => { const nv = Math.max(0, v - 1); save({ edgeLeft, arrowShiftX: nv }); return nv; }); changed = true; }
-      if (e.key === "]") { setArrowShiftX(v => { const nv = v + 1; save({ edgeLeft, arrowShiftX: nv }); return nv; }); changed = true; }
-      if (e.key === "0") { setEdgeLeft(DEFAULTS.edgeLeft); setArrowShiftX(DEFAULTS.arrowShiftX); save({ edgeLeft: DEFAULTS.edgeLeft, arrowShiftX: DEFAULTS.arrowShiftX }); changed = true; }
+      if (e.key === "ArrowLeft")  { setEdgeLeft(v => { const nv = Math.max(0, v - 2); save({ edgeLeft: nv, arrowShiftX }); return nv; }); changed = true; }
+      if (e.key === "ArrowRight") { setEdgeLeft(v => { const nv = v + 2;           save({ edgeLeft: nv, arrowShiftX }); return nv; }); changed = true; }
+      if (e.key === "[")          { setArrowShiftX(v => { const nv = Math.max(0, v - 1); save({ edgeLeft, arrowShiftX: nv }); return nv; }); changed = true; }
+      if (e.key === "]")          { setArrowShiftX(v => { const nv = v + 1;           save({ edgeLeft, arrowShiftX: nv }); return nv; }); changed = true; }
+      if (e.key === "0")          { setEdgeLeft(DEFAULTS.edgeLeft); setArrowShiftX(DEFAULTS.arrowShiftX); save({ edgeLeft: DEFAULTS.edgeLeft, arrowShiftX: DEFAULTS.arrowShiftX }); changed = true; }
       if (changed) e.preventDefault();
     };
     window.addEventListener("keydown", onKey);

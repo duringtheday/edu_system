@@ -7,7 +7,7 @@ import DeviceIndicator from "./DeviceIndicator";
 import { MAIN } from "../lib/nav";
 
 function keyFromPath(pathname: string): string | null {
-  const segs = pathname.replace(/\/+$/,"").split("/").filter(Boolean); // remove trailing slash
+  const segs = pathname.replace(/\/+$/,"").split("/").filter(Boolean);
   if (segs[0] === "hub" && segs.length >= 2) return segs[1];
   const first = segs[0] || "";
   const hit = MAIN.find(m => m.key === first);
@@ -16,12 +16,13 @@ function keyFromPath(pathname: string): string | null {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const p = pathname.replace(/\/+$/,""); // normalize trailing slash
+  const p = pathname.replace(/\/+$/,"");
   const router = useRouter();
 
   const onLogin = p === "";
   const onHubRoot = p === "/hub";
 
+  // show EdgeDial on every page except login and hub root
   const showDial = !onLogin && !onHubRoot;
   const showBack = showDial;
   const showSignOut = !onLogin;
@@ -44,8 +45,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <EdgeDial
           activeIndex={activeIndex}
           onNavigate={goto}
-          edgeLeft={14}      // ← move whole dial in/out
-          arrowShiftX={12}   // ← fine-tune arrow containers
+          /* EdgeDial manages its own positioning (hotkeys/localStorage) */
         />
       )}
 
