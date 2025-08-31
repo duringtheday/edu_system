@@ -27,12 +27,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
+          cache: "pnpm"
 
       - name: Install deps (monorepo root)
         run: pnpm install --frozen-lockfile
 
-      - name: Build static site (Next output: export)
+      - name: "Build static site (Next output: export)"
         shell: pwsh
         working-directory: apps/web
         env:
