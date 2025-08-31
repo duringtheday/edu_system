@@ -1,0 +1,13 @@
+{
+    // ESLint opera por paquete (monorepo)
+    "eslint.workingDirectories": [
+      { "directory": "apps/web", "changeProcessCWD": true }
+    ],
+    // Asegura que ESLint valide JS/TS en el editor
+    "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  
+    // (ya los usabas) perf de TS
+    "typescript.tsserver.maxTsServerMemory": 4096,
+    "typescript.tsserver.watchOptions": { "watchFile": "useFsEvents" }
+  }
+  

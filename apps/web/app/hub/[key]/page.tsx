@@ -1,12 +1,14 @@
-"use client";
 import React from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { MAIN, SUB } from "../../../lib/nav";
 
-export default function CategoryPage() {
-  const { key } = useParams<{ key: string }>();
-  const idx = Math.max(0, MAIN.findIndex(m => m.key === key));
+// needed for static export on GitHub Pages
+export function generateStaticParams() {
+  return MAIN.map(m => ({ key: m.key }));
+}
+
+export default function CategoryPage({ params }: { params: { key: string } }) {
+  const idx = Math.max(0, MAIN.findIndex(m => m.key === params.key));
   const main = MAIN[idx];
   const items = (SUB as any)[main.key] as { label: string; href: string }[];
 

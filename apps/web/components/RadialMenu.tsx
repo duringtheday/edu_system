@@ -27,15 +27,16 @@ export default function RadialMenu({ onSelect }: { onSelect: (key: string)=>void
       </div>
 
       {/* ring items */}
-      {items.map((it, i) => {
+      {items.map((item, i) => {
         const angle = (i / items.length) * Math.PI * 2; // 0..2π
         const cx = R + Math.cos(angle) * R;
         const cy = R + Math.sin(angle) * R;
+        const Icon = item.Icon;
         return (
           <button
-            key={it.key}
-            onClick={() => onSelect(it.key)}
-            title={it.label}
+            key={item.key}
+            onClick={() => onSelect(item.key)}
+            title={item.label}
             className="btn animate-slide"
             style={{
               position:"absolute",
@@ -44,7 +45,7 @@ export default function RadialMenu({ onSelect }: { onSelect: (key: string)=>void
               boxShadow:"var(--shadow)"
             }}
           >
-            <span style={{ fontWeight:700 }}>{it.idx}</span>
+             <Icon width={18} height={18} />
           </button>
         );
       })}

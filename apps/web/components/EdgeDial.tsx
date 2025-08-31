@@ -2,16 +2,14 @@
 import React from "react";
 import { MAIN } from "../lib/nav";
 
-// centered arrow icon
-function Arrow({ dir }: { dir: "up" | "down" }) {
-  const rotate = dir === "up" ? 0 : 180;
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" style={{ transform: `rotate(${rotate}deg)` }} aria-hidden="true">
-      <path d="M12 6l-6 6h4v6h4v-6h4z" fill="currentColor" />
-    </svg>
-  );
-}
-
+/**
+ * EdgeDial
+ * - All geometry/visual controls live in CFG (below)
+ * - Live tuning (saved to localStorage) without extra files:
+ *     Ctrl+Alt+Left/Right → edgeLeft (move whole dial in/out)
+ *     Ctrl+Alt+[ / ]      → arrowShiftX (move arrow buttons)
+ *     Ctrl+Alt+0          → reset to defaults
+ */
 export default function EdgeDial({
   activeIndex,
   onNavigate,
@@ -19,133 +17,134 @@ export default function EdgeDial({
   activeIndex: number;
   onNavigate: (key: string) => void;
 }) {
+  // ======= CONFIG YOU CAN TWEAK (defaults) =======
+  const DEFAULTS = {
+    stepDeg: 36,        // degrees between slots
+    radius: 110,        // arc radius
+    btn: 44,            // base button size
+    sel: 56,            // selected size
+    duration: 120,      // rotation animation (ms)
+    edgeLeft: 14,       // distance of the whole dial from the window's left edge
+    arrowShiftX: -10,    // horizontal offset for the arrow buttons
+    arrowW: 25,         // arrow icon width
+    arrowH: 25,         // arrow icon height
+    arrowStroke: 3.1,   // arrow line thickness
+    arrowOverTop: 38,   // overlap above the top icon (px)
+    arrowOverBottom: 6, // overlap below the bottom icon (px)
+  } as const;
+  // ===============================================
+
+  // Load/save only inside this component
+  const KEY = "eduos_edgeDial";
+  const load = (): { edgeLeft: number; arrowShiftX: number } => {
+    if (typeof window === "undefined") return { edgeLeft: DEFAULTS.edgeLeft, arrowShiftX: DEFAULTS.arrowShiftX };
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return { edgeLeft: DEFAULTS.edgeLeft, arrowShiftX: DEFAULTS.arrowShiftX };
+      const j = JSON.parse(raw);
+      return {
+        edgeLeft: Number.isFinite(j.edgeLeft) ? j.edgeLeft : DEFAULTS.edgeLeft,
+        arrowShiftX: Number.isFinite(j.arrowShiftX) ? j.arrowShiftX : DEFAULTS.arrowShiftX,
+      };
+    } catch {
+      return { edgeLeft: DEFAULTS.edgeLeft, arrowShiftX: DEFAULTS.arrowShiftX };
+    }
+  };
+  const save = (cfg: { edgeLeft: number; arrowShiftX: number }) => {
+    try { localStorage.setItem(KEY, JSON.stringify(cfg)); } catch {}
+  };
+
+  const [edgeLeft, setEdgeLeft] = React.useState(() => load().edgeLeft);
+  const [arrowShiftX, setArrowShiftX] = React.useState(() => load().arrowShiftX);
+
+  // Live hotkeys (no extra UI, no extra files)
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey && e.altKey)) return;
+      let changed = false;
+      if (e.key === "ArrowLeft") { setEdgeLeft(v => { const nv = Math.max(0, v - 2); save({ edgeLeft: nv, arrowShiftX }); return nv; }); changed = true; }
+      if (e.key === "ArrowRight") { setEdgeLeft(v => { const nv = v + 2; save({ edgeLeft: nv, arrowShiftX }); return nv; }); changed = true; }
+      if (e.key === "[") { setArrowShiftX(v => { const nv = Math.max(0, v - 1); save({ edgeLeft, arrowShiftX: nv }); return nv; }); changed = true; }
+      if (e.key === "]") { setArrowShiftX(v => { const nv = v + 1; save({ edgeLeft, arrowShiftX: nv }); return nv; }); changed = true; }
+      if (e.key === "0") { setEdgeLeft(DEFAULTS.edgeLeft); setArrowShiftX(DEFAULTS.arrowShiftX); save({ edgeLeft: DEFAULTS.edgeLeft, arrowShiftX: DEFAULTS.arrowShiftX }); changed = true; }
+      if (changed) e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edgeLeft, arrowShiftX]);
+
+  // --- existing behavior (unchanged) ---
   const N = MAIN.length;
-
-  // geometry
-  const STEP = 36;
-  const R = 110;
-  const BTN = 44;
-  const SEL = 56;
-  const EDGE = 0;
-  const DURATION = 100;
-
-  // ⬅️ CONTROL ONLY THE ARROW CONTAINER OFFSET (px)
-  const ARROW_SHIFT_X = 12; // increase to push arrows right; negative to pull left
-  const ARROW_GAP = 8;      // vertical gap between arrow and icon
-
-  // animate rotation then navigate
   const [offset, setOffset] = React.useState(0);
   React.useEffect(() => { setOffset(0); }, [activeIndex]);
 
   const prevIdx = (activeIndex - 1 + N) % N;
   const nextIdx = (activeIndex + 1) % N;
 
-  const slots = [-STEP, 0, STEP].map((deg) => deg + offset);
+  const slots = [-DEFAULTS.stepDeg, 0, DEFAULTS.stepDeg].map((deg) => deg + offset);
   const triplet = [prevIdx, activeIndex, nextIdx];
 
-  // position helpers (tangent to the edge)
   const leftFor = (deg: number, size: number) => {
     const rad = (deg * Math.PI) / 180;
-    return EDGE + R * (Math.cos(rad) - 1) + (BTN - size) / 2;
+    return DEFAULTS.radius * (Math.cos(rad) - 1) + (DEFAULTS.btn - size) / 2;
   };
   const topFor = (deg: number, size: number) => {
     const rad = (deg * Math.PI) / 180;
-    return R + Math.sin(rad) * R - size / 2;
+    return DEFAULTS.radius + Math.sin(rad) * DEFAULTS.radius - size / 2;
   };
 
   const animate = (dir: "prev" | "next") => {
-    setOffset(dir === "prev" ? STEP : -STEP);
+    setOffset(dir === "prev" ? DEFAULTS.stepDeg : -DEFAULTS.stepDeg);
     const target = dir === "prev" ? prevIdx : nextIdx;
-    window.setTimeout(() => onNavigate(MAIN[target].key), DURATION);
+    window.setTimeout(() => onNavigate(MAIN[target].key), DEFAULTS.duration);
   };
-
-  // base arrow positions centered to icons (no shift yet)
-  const ARROW_W = 40;
-  const ARROW_H = 32;
-
-  const upLeftBase   = leftFor(-STEP, BTN) + BTN / 2 - ARROW_W / 2;
-  const upTop        = topFor(-STEP, BTN) - (ARROW_H + ARROW_GAP);
-
-  const downLeftBase = leftFor(STEP, BTN) + BTN / 2 - ARROW_W / 2;
-  const downTop      = topFor(STEP, BTN) + BTN + ARROW_GAP;
 
   return (
     <div
       style={{
         position: "fixed",
-        left: "8px", // keep dial near edge; this does NOT move arrows now
+        left: edgeLeft,                // ← whole dial offset from left edge
         top: "50%",
         transform: "translateY(-50%)",
-        width: R + SEL,
-        height: 2 * R,
+        width: DEFAULTS.radius + DEFAULTS.sel,
+        height: 2 * DEFAULTS.radius,
         pointerEvents: "none",
         zIndex: 30,
       }}
     >
-      {/* Arrow wrapper: ONLY this group moves with ARROW_SHIFT_X */}
-      <div
+      {/* ↑ arrow (overlaps ABOVE the top icon) */}
+      <button
+        aria-label="Prev"
+        onClick={() => animate("prev")}
+        className="btn btn-secondary"
         style={{
           position: "absolute",
-          inset: 0,
-          transform: `translateX(${ARROW_SHIFT_X}px)`,
-          pointerEvents: "none",
+          left: arrowShiftX,           // ← fine-tune arrow container horizontally
+          top: topFor(-DEFAULTS.stepDeg, DEFAULTS.btn) - DEFAULTS.arrowOverTop,
+          width: 44,
+          height: 34,
+          borderRadius: 12,
+          pointerEvents: "auto",
+          zIndex: 3,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          lineHeight: 0,
         }}
       >
-        {/* ↑ arrow */}
-        <button
-          aria-label="Prev"
-          onClick={() => animate("prev")}
-          className="btn btn-secondary"
-          style={{
-            position: "absolute",
-            left: upLeftBase,
-            top: upTop,
-            width: ARROW_W,
-            height: ARROW_H,
-            borderRadius: 12,
-            display: "grid",
-            placeItems: "center",
-            padding: 0,
-            lineHeight: 0,
-            pointerEvents: "auto",
-            zIndex: 3,
-          }}
-        >
-          <Arrow dir="up" />
-        </button>
-
-        {/* ↓ arrow */}
-        <button
-          aria-label="Next"
-          onClick={() => animate("next")}
-          className="btn btn-secondary"
-          style={{
-            position: "absolute",
-            left: downLeftBase,
-            top: downTop,
-            width: ARROW_W,
-            height: ARROW_H,
-            borderRadius: 12,
-            display: "grid",
-            placeItems: "center",
-            padding: 0,
-            lineHeight: 0,
-            pointerEvents: "auto",
-            zIndex: 3,
-          }}
-        >
-          <Arrow dir="down" />
-        </button>
-      </div>
+        <svg width={DEFAULTS.arrowW} height={DEFAULTS.arrowH} viewBox="0 0 24 24">
+          <path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" strokeWidth={DEFAULTS.arrowStroke} strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
 
       {/* three icons along the arc */}
       {triplet.map((idx, i) => {
         const deg = slots[i];
         const isCenter = i === 1;
-        const size = isCenter ? SEL : BTN;
+        const size = isCenter ? DEFAULTS.sel : DEFAULTS.btn;
         const item = MAIN[idx];
         const Icon = item.Icon;
-
         return (
           <button
             key={item.key}
@@ -166,7 +165,7 @@ export default function EdgeDial({
               placeItems: "center",
               pointerEvents: "auto",
               transition:
-                "left .14s ease, top .14s ease, width .12s ease, height .12s ease, border-color .12s ease, background .12s ease",
+                "left .12s ease, top .12s ease, width .12s ease, height .12s ease, border-color .12s ease, background .12s ease",
               willChange: "left, top, width, height",
               zIndex: isCenter ? 2 : 1,
             }}
@@ -175,6 +174,31 @@ export default function EdgeDial({
           </button>
         );
       })}
+
+      {/* ↓ arrow (overlaps BELOW the bottom icon) */}
+      <button
+        aria-label="Next"
+        onClick={() => animate("next")}
+        className="btn btn-secondary"
+        style={{
+          position: "absolute",
+          left: arrowShiftX,
+          top: topFor(DEFAULTS.stepDeg, DEFAULTS.btn) + DEFAULTS.btn + DEFAULTS.arrowOverBottom,
+          width: 44,
+          height: 34,
+          borderRadius: 12,
+          pointerEvents: "auto",
+          zIndex: 3,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          lineHeight: 0,
+        }}
+      >
+        <svg width={DEFAULTS.arrowW} height={DEFAULTS.arrowH} viewBox="0 0 24 24">
+          <path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" strokeWidth={DEFAULTS.arrowStroke} strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
     </div>
   );
 }

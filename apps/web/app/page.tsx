@@ -1,16 +1,16 @@
 "use client";
-import { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const ROLES = ["student","parent","teacher_payroll","teacher_ext","admin","staff","reception"] as const;
 type Role = typeof ROLES[number];
 
-export default function Page() {
+function LoginInner() {
   const [token, setToken] = useState("");
-  const [remember, setRemember] = useState(true); // NEW
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const params = useSearchParams();
+  const params = useSearchParams();           // <-- requires Suspense
   const next = params.get("next");
 
   function inferRole(t: string): Role | null {
@@ -24,17 +24,14 @@ export default function Page() {
     const trimmed = token.trim();
     if (!trimmed) { setError("Enter your access token."); return; }
 
-    // Cookie lifetime based on "remember this device"
-    const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 12; // 30d or 12h
+    const maxAge = remember ? 60*60*24*30 : 60*60*12; // 30d or 12h
     document.cookie = `eduos_token=${encodeURIComponent(trimmed)}; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
 
-    // Dev-mode role inference
     const role = inferRole(trimmed);
     if (role) localStorage.setItem("eduos_role", role);
     localStorage.setItem("eduos_token", trimmed);
-    localStorage.setItem("eduos_remember", remember ? "1" : "0"); // NEW
+    localStorage.setItem("eduos_remember", remember ? "1" : "0");
 
-    // Prepare a per-device id (used later when we sync sessions to Firestore)
     if (!localStorage.getItem("eduos_device_id")) {
       const id = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2);
       localStorage.setItem("eduos_device_id", id);
@@ -50,9 +47,8 @@ export default function Page() {
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Enter Access Token</h1>
         <p style={{ marginTop: 6, color: "var(--muted)" }}>Access is restricted. Paste the token to continue.</p>
         <form onSubmit={onSubmit} style={{ display: "grid", gap: 12, marginTop: 8 }}>
-          <input className="input" placeholder="Paste your token here" value={token}
-                 onChange={(e)=>{setToken(e.target.value); setError(null);}} />
-          {/* Remember me */}
+          <input className="input" placeholder="Paste your token here"
+                 value={token} onChange={(e)=>{setToken(e.target.value); setError(null);}} />
           <label style={{ display:"flex", gap:8, alignItems:"center", color:"var(--muted)", userSelect:"none" }}>
             <input type="checkbox" checked={remember} onChange={(e)=>setRemember(e.target.checked)} />
             Keep me signed in on this device
@@ -63,11 +59,18 @@ export default function Page() {
             <button className="btn btn-secondary" type="button" onClick={()=>setToken("")}>Clear</button>
           </div>
         </form>
-        {/* Dev tokens hint */}
         <div style={{ marginTop: 12, color: "var(--muted)", fontSize: 14 }}>
           Examples: <code>admin-token</code>, <code>teacher_payroll-token</code>, <code>student-token</code> …
         </div>
       </div>
     </section>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <LoginInner />
+    </Suspense>
   );
 }

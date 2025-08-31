@@ -3,41 +3,51 @@ import React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AuthGate from "./AuthGate";
 import EdgeDial from "./EdgeDial";
-import { MAIN } from "../lib/nav";
 import DeviceIndicator from "./DeviceIndicator";
-
+import { MAIN } from "../lib/nav";
 
 function keyFromPath(pathname: string): string | null {
-  if (pathname.startsWith("/hub/")) {
-    const seg = pathname.split("/")[2];
-    return seg || null;
-  }
-  const first = (pathname.split("/")[1] || "").toLowerCase();
+  const segs = pathname.replace(/\/+$/,"").split("/").filter(Boolean); // remove trailing slash
+  if (segs[0] === "hub" && segs.length >= 2) return segs[1];
+  const first = segs[0] || "";
   const hit = MAIN.find(m => m.key === first);
   return hit ? hit.key : null;
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const p = pathname.replace(/\/+$/,""); // normalize trailing slash
   const router = useRouter();
 
-  const showDial = pathname !== "/" && pathname !== "/hub"; // hide on login + main hub
-  const showBack = showDial;
-  const showSignOut = pathname !== "/";                      // everywhere except login
+  const onLogin = p === "";
+  const onHubRoot = p === "/hub";
 
-  const key = keyFromPath(pathname) || "dashboard";
+  const showDial = !onLogin && !onHubRoot;
+  const showBack = showDial;
+  const showSignOut = !onLogin;
+
+  const key = keyFromPath(p) || "dashboard";
   const activeIndex = Math.max(0, MAIN.findIndex(m => m.key === key));
 
   const goto = (k: string) => router.push(`/hub/${k}`);
   const back = () => {
-    if (pathname.startsWith("/hub/")) router.push("/hub");
+    if (p.startsWith("/hub/")) router.push("/hub");
     else router.push(`/hub/${key}`);
   };
   const signOut = () => { window.location.href = "/signout"; };
 
   return (
     <AuthGate>
-      {showDial && <EdgeDial activeIndex={activeIndex} onNavigate={goto} />}
+      <DeviceIndicator />
+
+      {showDial && (
+        <EdgeDial
+          activeIndex={activeIndex}
+          onNavigate={goto}
+          edgeLeft={14}      // ← move whole dial in/out
+          arrowShiftX={12}   // ← fine-tune arrow containers
+        />
+      )}
 
       {showBack && (
         <div style={{ position: "fixed", left: 72, top: 12, zIndex: 50 }}>
@@ -45,13 +55,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-
-
-      {/* show the device dot on every route, including "/" */}
-      <DeviceIndicator />
-
-      {/* keep Sign out hidden on login */}
-      {pathname !== "/" && (
+      {showSignOut && (
         <div style={{ position: "fixed", right: 16, top: 12, zIndex: 50 }}>
           <button className="btn btn-secondary" onClick={signOut}>Sign out</button>
         </div>

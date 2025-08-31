@@ -31,7 +31,8 @@ export default function DeviceIndicator() {
   }, [authed]);
 
   // When logged out, ignore any stored devices (show neutral state)
-  const devices = React.useMemo(() => (authed ? getDevices() : []), [authed, tick]);
+  // const devices = React.useMemo(() => (authed ? getDevices() : []), [authed, tick]);
+  const devices = getDevices();
   const total = devices.length;
   const activeCount = devices.filter(d => colorForDevice(d) === "#16A34A").length;
 
@@ -41,7 +42,7 @@ export default function DeviceIndicator() {
   //               inner green if any active, red if none active, gray if none
   const outerBg = authed ? (total > 0 ? "rgba(11,95,255,.15)" : "#FFFFFF") : "#FFFFFF";
   const innerColor = authed
-    ? (total === 0 ? "#98A2B3" : activeCount > 0 ? "#16A34A" : "#EF4444")
+    ? (total === 0 ? "#98A2B3" : activeCount > 0 ? "#009B89" : "#EF4444")
     : "#98A2B3";
 
   const countText = authed && total > 1 ? (total > 9 ? "9+" : String(total)) : null;
@@ -76,7 +77,7 @@ export default function DeviceIndicator() {
           style={{
             position: "absolute", right: -4, marginTop: 8, width: 280,
             background: "#FFF", border: "1px solid #D0D5DD", borderRadius: 12,
-            boxShadow: "0 6px 24px rgba(16,24,40,.08)"
+            boxShadow: "0 6px 24px rgba(0, 85, 255, 0.08)"
           }}
         >
           <div style={{ padding: 10, borderBottom: "1px solid #F2F4F7", fontWeight: 600 }}>

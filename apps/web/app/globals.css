@@ -35,7 +35,7 @@ button{font:inherit;cursor:pointer}
 .input{
   width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;outline:none
 }
-.input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(11,95,255,.15)}
+.input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(11,95,255,15)}
 .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-weight:600}
 
 /* animations */
