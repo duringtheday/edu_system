@@ -16,7 +16,6 @@ concurrency:
 
 jobs:
   build:
-    # cambiar a: windows-latest y mirar la nota de 404 más abajo
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,12 +36,12 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Build (Next output export)
+      - name: Build (Next export output)
         env:
           GITHUB_ACTIONS: "true"
         run: pnpm build
 
-      - name: Create nojekyll and 404
+      - name: Create .nojekyll and 404
         run: |
           touch out/.nojekyll
           cp out/index.html out/404.html
