@@ -2,7 +2,7 @@ name: Deploy web to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
@@ -24,24 +24,24 @@ jobs:
         with:
           version: 9
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: pnpm
 
       - name: Install deps (monorepo root)
         run: pnpm install --frozen-lockfile
 
-      - name: Build static site (Next output: export)
+      - name: "Build & export (Next 'output: export')"
         working-directory: apps/web
         env:
           GITHUB_ACTIONS: "true"
-        run: pnpm build
-
-      - name: Add 404 fallback (SPA-friendly)
         shell: pwsh
-        working-directory: apps/web/out
-        run: Copy-Item index.html 404.html -Force
+        run: |
+          pnpm build
+          pnpm run export
+          Copy-Item .\out\index.html .\out\404.html -Force
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -54,6 +54,9 @@ jobs:
   deploy:
     needs: build
     runs-on: windows-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
