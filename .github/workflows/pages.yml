@@ -2,7 +2,7 @@ name: Deploy web to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -11,44 +11,44 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "pnpm"
+          cache: pnpm
 
       - name: Install deps (monorepo root)
         run: pnpm install --frozen-lockfile
 
-      - name: "Build static site (Next output: export)"
-        shell: pwsh
+      - name: Build static site (Next export)
         working-directory: apps/web
         env:
           GITHUB_ACTIONS: "true"
         run: |
           pnpm build
-          if (Test-Path .\out\index.html) {
-            New-Item -Path .\out\.nojekyll -ItemType File -Force | Out-Null
-            Copy-Item .\out\index.html .\out\404.html -Force
-          } else {
-            Write-Error "out/index.html not found after build"
-          }
+          New-Item -Path .\out\.nojekyll -ItemType File -Force | Out-Null
+          Copy-Item .\out\index.html .\out\404.html -Force
 
-      - uses: actions/configure-pages@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/out
 
