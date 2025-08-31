@@ -2,7 +2,7 @@ name: Deploy web to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: true
 
 jobs:
@@ -20,38 +20,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: "Setup Node 20"
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: '**/pnpm-lock.yaml'
+          cache: "pnpm"
+          cache-dependency-path: "**/pnpm-lock.yaml"
 
-      # ✅ Ensure pnpm exists using Corepack (no extra action, works on any runner)
-      - name: Enable pnpm
+      # pnpm sin acciones externas: usamos Corepack
+      - name: "Enable pnpm via Corepack"
         run: |
           corepack enable
-          # use the version from "packageManager" in package.json; fallback to v9
-          corepack prepare pnpm@latest --activate || true
+          corepack prepare pnpm@9 --activate
           pnpm -v
 
-      - name: Install deps (monorepo root)
+      - name: "Install deps (monorepo root)"
         run: pnpm install --frozen-lockfile
 
-      - name: Build web (Next output: export)
+      - name: "Build web (Next output: export)"
         env:
           GITHUB_ACTIONS: "true"
-        run: pnpm --filter @edu-os/web build
+        run: pnpm --filter "@edu-os/web" build
 
-      - name: Add .nojekyll and 404
+      - name: "Prepare static artifacts"
         run: |
           touch apps/web/out/.nojekyll
           cp apps/web/out/index.html apps/web/out/404.html || true
 
-      - name: Configure Pages
+      - name: "Configure Pages"
         uses: actions/configure-pages@v4
 
-      - name: Upload artifact
+      - name: "Upload artifact"
         uses: actions/upload-pages-artifact@v3
         with:
           path: apps/web/out
