@@ -2,7 +2,7 @@ name: Deploy web to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -17,7 +17,6 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,25 +25,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
 
-      # ← install pnpm via Corepack (no pnpm/action-setup, no mismatches)
-      - name: Enable Corepack (PNPM)
+      # Instala PNPM de forma global para que esté en PATH
+      - name: Install pnpm
+        shell: pwsh
         run: |
-          corepack enable
-          corepack prepare pnpm@9.15.9 --activate
+          npm i -g pnpm@9.15.9
+          pnpm -v
 
-      - name: Install deps (monorepo root)
+      - name: Install deps
+        shell: pwsh
         run: pnpm install --frozen-lockfile
 
       - name: Build web
+        shell: pwsh
         working-directory: apps/web
         run: pnpm build
 
-      - name: Prepare static files for Pages
-        working-directory: apps/web
+      - name: Prepare static files
         shell: pwsh
+        working-directory: apps/web
         run: |
           if (-not (Test-Path out)) { throw "Missing 'out' directory. Check next.config.js (output: export)." }
           New-Item -ItemType File -Path out/.nojekyll -Force | Out-Null
