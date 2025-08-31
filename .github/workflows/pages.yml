@@ -26,20 +26,19 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      # ✅ Put pnpm on PATH via Corepack (respects your packageManager version)
-      - name: Enable Corepack (pnpm)
-        run: |
-          corepack enable
-          # Pin to your repo's version if you want; else Corepack uses packageManager field
-          corepack prepare pnpm@9.15.9 --activate
-          pnpm -v
+      # Ensure pnpm is available (uses version from packageManager in package.json)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - run: pnpm -v
 
-      # Monorepo install at the root
-      - name: Install deps (monorepo root)
+      # Install at monorepo root
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Build only the web app; it will output to apps/web/out (Next "output: export")
-      - name: Build static site
+      # Build only the web package (Next "output: export" writes to apps/web/out)
+      - name: Build web (static export)
         env:
           GITHUB_ACTIONS: "true"
         run: pnpm --filter @edu-os/web build
