@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: true
 
 jobs:
@@ -19,28 +19,33 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
+        with:
+          version: 9
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-      - name: Install deps (monorepo)
+          cache: "pnpm"
+
+      - name: Install deps (monorepo root)
         run: pnpm install --frozen-lockfile
-      - name: Build (apps/web)
+
+      - name: Build static site (Next output: export)
         working-directory: apps/web
         env:
           GITHUB_ACTIONS: "true"
         run: pnpm build
-      - name: Export static site
-        working-directory: apps/web
-        run: pnpm exec next export
-      - name: SPA fallback (404 -> index)
-        working-directory: apps/web
+
+      - name: Add 404 fallback (SPA-friendly)
         shell: pwsh
-        run: Copy-Item .\out\index.html .\out\404.html -Force
-      - name: Configure Pages
+        working-directory: apps/web/out
+        run: Copy-Item index.html 404.html -Force
+
+      - name: Setup Pages
         uses: actions/configure-pages@v4
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
