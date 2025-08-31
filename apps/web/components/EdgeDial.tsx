@@ -4,11 +4,8 @@ import { MAIN } from "../lib/nav";
 
 /**
  * EdgeDial
- * - All geometry/visual controls live in CFG (below)
- * - Live tuning (saved to localStorage) without extra files:
- *     Ctrl+Alt+Left/Right → edgeLeft (move whole dial in/out)
- *     Ctrl+Alt+[ / ]      → arrowShiftX (move arrow buttons)
- *     Ctrl+Alt+0          → reset to defaults
+ * - Toda la geometría y visual en DEFAULTS + ARROW_* (abajo)
+ * - Teclas: Ctrl+Alt+←/→ (mueve dial), Ctrl+Alt+[ / ] (flechas), Ctrl+Alt+0 (reset)
  */
 export default function EdgeDial({
   activeIndex,
@@ -17,27 +14,31 @@ export default function EdgeDial({
   activeIndex: number;
   onNavigate: (key: string) => void;
 }) {
-  // ======= CONFIG YOU CAN TWEAK (defaults) =======
+  // ======= CONFIG BÁSICA =======
   const DEFAULTS = {
-    stepDeg: 36,        // degrees between slots
-    radius: 110,        // arc radius
-    btn: 44,            // base button size
-    sel: 56,            // selected size
-    duration: 120,      // rotation animation (ms)
-    edgeLeft: 14,       // distance of the whole dial from the window's left edge
-    arrowShiftX: -10,    // horizontal offset for the arrow buttons
-    arrowW: 25,         // arrow icon width
-    arrowH: 25,         // arrow icon height
-    arrowStroke: 3.1,   // arrow line thickness
-    arrowOverTop: 38,   // overlap above the top icon (px)
-    arrowOverBottom: 6, // overlap below the bottom icon (px)
+    stepDeg: 36,        // grados entre slots
+    radius: 110,        // radio del arco
+    btn: 44,            // tamaño botón base
+    sel: 56,            // tamaño botón seleccionado (centro)
+    duration: 120,      // animación rotación (ms)
+    edgeLeft: 14,       // separación del dial desde el borde izquierdo
+    arrowShiftX: -10,   // desplazamiento horizontal de las flechas
+    arrowOverTop: 44,   // solape por encima del botón superior
+    arrowOverBottom: 6, // solape por debajo del botón inferior
   } as const;
-  // ===============================================
 
-  // Load/save only inside this component
+  // ======= FLECHAS (CAMBIA SOLO ESTAS 3 PARA TAMAÑO/GRUESO) =======
+  const ARROW_SIZE   = 28;   // 18–32 recomendado
+  const ARROW_STROKE = 4.0;  // 2.5–5 recomendado
+  const ARROW_BTN_W  = ARROW_SIZE + 18; // ancho del botón contenedor
+  const ARROW_BTN_H  = ARROW_SIZE + 10; // alto del botón contenedor
+  // ================================================================
+
+  // Persistencia local (solo este componente)
   const KEY = "eduos_edgeDial";
   const load = (): { edgeLeft: number; arrowShiftX: number } => {
-    if (typeof window === "undefined") return { edgeLeft: DEFAULTS.edgeLeft, arrowShiftX: DEFAULTS.arrowShiftX };
+    if (typeof window === "undefined")
+      return { edgeLeft: DEFAULTS.edgeLeft, arrowShiftX: DEFAULTS.arrowShiftX };
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) return { edgeLeft: DEFAULTS.edgeLeft, arrowShiftX: DEFAULTS.arrowShiftX };
@@ -57,16 +58,16 @@ export default function EdgeDial({
   const [edgeLeft, setEdgeLeft] = React.useState(() => load().edgeLeft);
   const [arrowShiftX, setArrowShiftX] = React.useState(() => load().arrowShiftX);
 
-  // Live hotkeys (no extra UI, no extra files)
+  // Hotkeys
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey && e.altKey)) return;
       let changed = false;
-      if (e.key === "ArrowLeft") { setEdgeLeft(v => { const nv = Math.max(0, v - 2); save({ edgeLeft: nv, arrowShiftX }); return nv; }); changed = true; }
-      if (e.key === "ArrowRight") { setEdgeLeft(v => { const nv = v + 2; save({ edgeLeft: nv, arrowShiftX }); return nv; }); changed = true; }
-      if (e.key === "[") { setArrowShiftX(v => { const nv = Math.max(0, v - 1); save({ edgeLeft, arrowShiftX: nv }); return nv; }); changed = true; }
-      if (e.key === "]") { setArrowShiftX(v => { const nv = v + 1; save({ edgeLeft, arrowShiftX: nv }); return nv; }); changed = true; }
-      if (e.key === "0") { setEdgeLeft(DEFAULTS.edgeLeft); setArrowShiftX(DEFAULTS.arrowShiftX); save({ edgeLeft: DEFAULTS.edgeLeft, arrowShiftX: DEFAULTS.arrowShiftX }); changed = true; }
+      if (e.key === "ArrowLeft")  { setEdgeLeft(v => { const nv = Math.max(0, v - 2); save({ edgeLeft: nv, arrowShiftX }); return nv; }); changed = true; }
+      if (e.key === "ArrowRight") { setEdgeLeft(v => { const nv = v + 2;           save({ edgeLeft: nv, arrowShiftX }); return nv; }); changed = true; }
+      if (e.key === "[")          { setArrowShiftX(v => { const nv = Math.max(0, v - 1); save({ edgeLeft, arrowShiftX: nv }); return nv; }); changed = true; }
+      if (e.key === "]")          { setArrowShiftX(v => { const nv = v + 1;           save({ edgeLeft, arrowShiftX: nv }); return nv; }); changed = true; }
+      if (e.key === "0")          { setEdgeLeft(DEFAULTS.edgeLeft); setArrowShiftX(DEFAULTS.arrowShiftX); save({ edgeLeft: DEFAULTS.edgeLeft, arrowShiftX: DEFAULTS.arrowShiftX }); changed = true; }
       if (changed) e.preventDefault();
     };
     window.addEventListener("keydown", onKey);
@@ -74,11 +75,10 @@ export default function EdgeDial({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [edgeLeft, arrowShiftX]);
 
-  // --- existing behavior (unchanged) ---
+  // --- rotación (igual que antes) ---
   const N = MAIN.length;
   const [offset, setOffset] = React.useState(0);
   React.useEffect(() => { setOffset(0); }, [activeIndex]);
-
   const prevIdx = (activeIndex - 1 + N) % N;
   const nextIdx = (activeIndex + 1) % N;
 
@@ -87,12 +87,13 @@ export default function EdgeDial({
 
   const leftFor = (deg: number, size: number) => {
     const rad = (deg * Math.PI) / 180;
-    return DEFAULTS.radius * (Math.cos(rad) - 1) + (DEFAULTS.btn - size) / 2;
+    return DEFAULTS.radius * (cos(rad) - 1) + (DEFAULTS.btn - size) / 2;
   };
   const topFor = (deg: number, size: number) => {
     const rad = (deg * Math.PI) / 180;
-    return DEFAULTS.radius + Math.sin(rad) * DEFAULTS.radius - size / 2;
+    return DEFAULTS.radius + sin(rad) * DEFAULTS.radius - size / 2;
   };
+  const cos = Math.cos, sin = Math.sin;
 
   const animate = (dir: "prev" | "next") => {
     setOffset(dir === "prev" ? DEFAULTS.stepDeg : -DEFAULTS.stepDeg);
@@ -100,11 +101,25 @@ export default function EdgeDial({
     window.setTimeout(() => onNavigate(MAIN[target].key), DEFAULTS.duration);
   };
 
+  // Flecha (chevron redondeado, escalable)
+  const Chevron = ({ up }: { up: boolean }) => (
+    <svg width={ARROW_SIZE} height={ARROW_SIZE} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d={up ? "M6 14l6-6 6 6" : "M6 10l6 6 6-6"}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={ARROW_STROKE}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+
   return (
     <div
       style={{
         position: "fixed",
-        left: edgeLeft,                // ← whole dial offset from left edge
+        left: edgeLeft,
         top: "50%",
         transform: "translateY(-50%)",
         width: DEFAULTS.radius + DEFAULTS.sel,
@@ -113,17 +128,17 @@ export default function EdgeDial({
         zIndex: 30,
       }}
     >
-      {/* ↑ arrow (overlaps ABOVE the top icon) */}
+      {/* ↑ arriba (sobre el botón superior) */}
       <button
         aria-label="Prev"
         onClick={() => animate("prev")}
         className="btn btn-secondary"
         style={{
           position: "absolute",
-          left: arrowShiftX,           // ← fine-tune arrow container horizontally
+          left: arrowShiftX,
           top: topFor(-DEFAULTS.stepDeg, DEFAULTS.btn) - DEFAULTS.arrowOverTop,
-          width: 44,
-          height: 34,
+          width: ARROW_BTN_W,
+          height: ARROW_BTN_H,
           borderRadius: 12,
           pointerEvents: "auto",
           zIndex: 3,
@@ -133,12 +148,10 @@ export default function EdgeDial({
           lineHeight: 0,
         }}
       >
-        <svg width={DEFAULTS.arrowW} height={DEFAULTS.arrowH} viewBox="0 0 24 24">
-          <path d="M6 14l6-6 6 6" fill="none" stroke="currentColor" strokeWidth={DEFAULTS.arrowStroke} strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+        <Chevron up />
       </button>
 
-      {/* three icons along the arc */}
+      {/* 3 íconos sobre el arco */}
       {triplet.map((idx, i) => {
         const deg = slots[i];
         const isCenter = i === 1;
@@ -175,7 +188,7 @@ export default function EdgeDial({
         );
       })}
 
-      {/* ↓ arrow (overlaps BELOW the bottom icon) */}
+      {/* ↓ abajo (debajo del botón inferior) */}
       <button
         aria-label="Next"
         onClick={() => animate("next")}
@@ -184,8 +197,8 @@ export default function EdgeDial({
           position: "absolute",
           left: arrowShiftX,
           top: topFor(DEFAULTS.stepDeg, DEFAULTS.btn) + DEFAULTS.btn + DEFAULTS.arrowOverBottom,
-          width: 44,
-          height: 34,
+          width: ARROW_BTN_W,
+          height: ARROW_BTN_H,
           borderRadius: 12,
           pointerEvents: "auto",
           zIndex: 3,
@@ -195,9 +208,7 @@ export default function EdgeDial({
           lineHeight: 0,
         }}
       >
-        <svg width={DEFAULTS.arrowW} height={DEFAULTS.arrowH} viewBox="0 0 24 24">
-          <path d="M6 10l6 6 6-6" fill="none" stroke="currentColor" strokeWidth={DEFAULTS.arrowStroke} strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+        <Chevron up={false} />
       </button>
     </div>
   );
