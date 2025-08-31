@@ -11,20 +11,19 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: windows-latest
+    # cambiar a: windows-latest y mirar la nota de 404 más abajo
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -32,19 +31,23 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      - name: Install deps (monorepo root)
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Build static site (Next export)
-        working-directory: apps/web
+      - name: Build (Next output export)
         env:
           GITHUB_ACTIONS: "true"
-        run: |
-          pnpm build
-          New-Item -Path .\out\.nojekyll -ItemType File -Force | Out-Null
-          Copy-Item .\out\index.html .\out\404.html -Force
+        run: pnpm build
 
-      - name: Setup Pages
+      - name: Create nojekyll and 404
+        run: |
+          touch out/.nojekyll
+          cp out/index.html out/404.html
+
+      - name: Configure Pages
         uses: actions/configure-pages@v4
 
       - name: Upload artifact
@@ -53,11 +56,11 @@ jobs:
           path: apps/web/out
 
   deploy:
-    needs: build
-    runs-on: windows-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
