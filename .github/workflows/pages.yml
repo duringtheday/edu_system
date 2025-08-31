@@ -17,30 +17,42 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with: { version: 9 }
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-      - name: Install deps (monorepo)
+          cache-dependency-path: pnpm-lock.yaml
+
+      # ← install pnpm via Corepack (no pnpm/action-setup, no mismatches)
+      - name: Enable Corepack (PNPM)
+        run: |
+          corepack enable
+          corepack prepare pnpm@9.15.9 --activate
+
+      - name: Install deps (monorepo root)
         run: pnpm install --frozen-lockfile
-      - name: Build (apps/web)
+
+      - name: Build web
         working-directory: apps/web
-        env:
-          GITHUB_ACTIONS: "true"
         run: pnpm build
-      - name: Export static site
-        working-directory: apps/web
-        run: pnpm exec next export
-      - name: SPA fallback (404 -> index)
+
+      - name: Prepare static files for Pages
         working-directory: apps/web
         shell: pwsh
-        run: Copy-Item .\out\index.html .\out\404.html -Force
-      - name: Configure Pages
+        run: |
+          if (-not (Test-Path out)) { throw "Missing 'out' directory. Check next.config.js (output: export)." }
+          New-Item -ItemType File -Path out/.nojekyll -Force | Out-Null
+          Copy-Item out/index.html out/404.html -Force
+
+      - name: Setup Pages
         uses: actions/configure-pages@v4
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
